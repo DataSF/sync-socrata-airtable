@@ -19,14 +19,13 @@ const sodaOpts = {
 const producer = new soda.Producer('data.sfgov.org', sodaOpts)
 let data = []
 base('Dataset Inventory').select({
-  filterByFormula: 'NOT({Revised Priority} = "Remove")',
+  filterByFormula: 'NOT(OR({Revised Priority} = "Remove",ID = ""))',
   sort: [{field: "ID", direction: "asc"}]
 }).eachPage(function page(records, fetchNextPage) {
   // This function (`page`) will get called for each page of records.
   records.forEach(function(record) {
     // Easiest to just map these on to the Socrata API keys
     let lagDays = firstValue(record.get('Lag Days'))
-    console.log(record.get('ID'))
     data.push({
       inventory_id: record.get('ID'),
       department_or_division: record.get('Department or Division'),
