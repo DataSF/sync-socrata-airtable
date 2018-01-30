@@ -1,0 +1,18 @@
+{
+  "name": "sync-socrata-metadata",
+  "version": "1.0.0",
+  "description": "Syncing Socrata metadata to Airtable",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "airtable": "^0.5.1",
+    "config": "^1.28.1",
+    "request": "^2.83.0",
+    "request-promise": "^4.2.2",
+    "soda-js": "^0.2.3"
+  }
+}
