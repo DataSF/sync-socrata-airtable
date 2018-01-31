@@ -2,6 +2,7 @@
 process.env.UV_THREADPOOL_SIZE = 128
 
 const syncAirtable = require('./syncAirtable')
+const syncSocrata = require('./syncSocrata')
 
 // 1. Define array of API calls
 
@@ -129,5 +130,8 @@ function transformProfiles (record) {
   }
 }
 
-// 3. Process the list
+// 3. Process the list and sync inventory to socrata on completion
 syncAirtable.processDatasetList(apiCalls, 0)
+  .then(() => {
+    syncSocrata.pushDatasetInventory()
+  })

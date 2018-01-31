@@ -43,7 +43,7 @@ function processDataset(url, options, onComplete, onError) {
           findAndUpdate(payload, options.transform)
         })
         options.page = options.page + options.add
-        setTimeout(processDataset, 25000, url, options, onComplete, onError)
+        setTimeout(processDataset, 30000, url, options, onComplete, onError)
       } else {
         console.log(`Completed querying ${url}`)
         return onComplete('success')
