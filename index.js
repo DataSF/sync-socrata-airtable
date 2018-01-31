@@ -7,133 +7,63 @@ const request = require('request-promise').defaults({gzip: true, json: true})
 
 const base = new Airtable({ apiKey: config.get('airtableKey') }).base(config.get('baseId'))
 
+const syncAirtable = require('./syncAirtable')
 
-// To capture public vs. private, we must query the Discovery API using the public param twice
+// 1. Define array of API calls
 
-/*
-syncDiscoveryAPI(
-  'https://api.us.socrata.com/api/catalog/v1?domains=data.sfgov.org&search_context=data.sfgov.org&provenance=official&limit=100&public=true&', transformDiscoveryPublic,
-  () => {
-    syncDiscoveryAPI(
-      'https://api.us.socrata.com/api/catalog/v1?domains=data.sfgov.org&search_context=data.sfgov.org&provenance=official&limit=100&public=false&', transformDiscoveryPrivate, 
-      () => {
-        syncMetadataAPI(syncDictionaryAPI)
-      })
-})
-*/
-
-syncDatasetProfiles()
-
-function syncDiscoveryAPI (url, transform, cb) {
-  syncDatasets(
-    url,
-    {
-      pageParam: 'offset',
-      page: 0,
-      add: 100,
-      transform: transform
-    },
-    cb 
-  )
-}
-
-function syncMetadataAPI (cb) {
-  syncDatasets('https://data.sfgov.org/api/views/metadata/v1?limit=100&', 
-  {
+let apiCalls = [
+//Discover API, public assets
+{
+  url: 'https://api.us.socrata.com/api/catalog/v1?domains=data.sfgov.org&search_context=data.sfgov.org&provenance=official&limit=100&public=true&',
+  options: {
+    pageParam: 'offset',
+    page: 0,
+    add: 100,
+    transform: transformDiscoveryPublic
+  }
+},
+// Discovery API, private assets
+{
+  url: 'https://api.us.socrata.com/api/catalog/v1?domains=data.sfgov.org&search_context=data.sfgov.org&provenance=official&limit=100&public=false&',
+  options: {
+    pageParam: 'offset',
+    page: 0,
+    add: 100,
+    transform: transformDiscoveryPrivate
+  }
+},
+// Metadata API
+{
+  url: 'https://data.sfgov.org/api/views/metadata/v1?limit=100&',
+  options: {
     pageParam: 'page',
     page: 1,
     add: 1,
     transform: transformMetadata
-  }, () => {
-    cb()
-  })
-}
-
-function syncDictionaryAPI () {
-  syncDatasets('https://data.sfgov.org/resource/cq5k-ka7d.json?$select=datasetid,SUM(CASE(field_documented=true,1)),SUM(CASE(field_documented=false,0)),count(*)&$group=datasetid&$limit=100&$order=datasetid&',
-  {
+  }
+},
+// Dictionary API
+{
+  url: 'https://data.sfgov.org/resource/cq5k-ka7d.json?$select=datasetid,SUM(CASE(field_documented=true,1)),SUM(CASE(field_documented=false,0)),count(*)&$group=datasetid&$limit=100&$order=datasetid&',
+  options: {
     pageParam: '$offset',
     page: 0,
     add: 100,
     transform: transformDocumentation
-  }, () => {
-    console.log('Done loading assets from master data dictionary')
-    syncDatasetProfiles()
-  })
-}
-
-function syncDatasetProfiles () {
-  syncDatasets('https://data.sfgov.org/resource/8ez2-fksg.json?&$limit=100&$order=datasetid&',
+  }
+},
+// Dataset profiles
 {
-  pageParam: '$offset',
-  page: 0,
-  add: 100,
-  transform: transformProfiles
-}, () => {
-  console.log('Done loading assets from asset inventory')
-  })
-}
+  url: 'https://data.sfgov.org/resource/8ez2-fksg.json?&$limit=100&$order=datasetid&',
+  options: {
+    pageParam: '$offset',
+    page: 0,
+    add: 100,
+    transform: transformProfiles
+  }
+}]
 
-function syncDatasets(url, options, cb) {
-  request({
-    url: url + options.pageParam + '=' + options.page,
-    headers: {
-      'Authorization': 'Basic ' + new Buffer(config.get('user') + ':' + config.get('pass')).toString('base64'),
-      'X-Socrata-Host': 'data.sfgov.org',
-      'X-App-Token': config.get('socrataAppToken')
-    }
-  })
-  .then(body => {
-    // for discovery API, returns an object with results as an array
-    if (typeof body === 'object' && !Array.isArray(body)) {
-      body = body.results
-    }
-    if (body.length > 0) {
-      console.log(body.length + ' records returned from Socrata API call')
-      body.forEach(record => {
-        let payload = options.transform(record)
-        findAndUpdate(payload, options.transform)
-      })
-      options.page = options.page + options.add
-      setTimeout(syncDatasets, 45000, url, options, cb)
-    } else {
-      cb()
-    }
-  }).catch(err => {
-    console.error(err)
-  })
-}
-
-function findAndUpdate (payload, transform) {
-  console.log('Querying Airtable for dataset ' + payload['ID'])
-  base('Data Catalog').select({
-    filterByFormula: '{ID} = "' + payload['ID'] + '"',
-    maxRecords: 1
-  }).firstPage((err, records) => {
-    if (err) { console.log('Error on ' + payload['ID']); console.error(err); return; }
-    
-    if (records.length === 0) { 
-      createRecord(payload) 
-    } else {
-      updateRecord(records[0].getId(), payload)
-    }
-  })
-}
-
-function updateRecord (id, payload) {
-  base('Data Catalog').update(id, payload, (err, record) => {
-      if (err) { console.error(err); return; }
-      console.log('Update: ' + record.get('ID'));
-  });
-}
-
-function createRecord (payload) {
-  base('Data Catalog').create(payload, (err, record) => {
-      if (err) { console.error(err); return; }
-      console.log('Create: ' + record.get('ID'));
-  });
-}
-
+// 2. Define transforms from API to Airtable, each accepts a record and maps to a json object schema
 function transformMetadata (record) {
   return {
     'ID': record.id,
@@ -204,3 +134,6 @@ function transformProfiles (record) {
     'Percent Documented': parseFloat(record.documented_percentage) * 100
   }
 }
+
+// 3. Process the list
+syncAirtable.processDatasetList(apiCalls, 0)
