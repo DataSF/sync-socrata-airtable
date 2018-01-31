@@ -1,12 +1,6 @@
 #!/usr/bin/env node
 process.env.UV_THREADPOOL_SIZE = 128
 
-const Airtable = require('airtable')
-const config = require('config')
-const request = require('request-promise').defaults({gzip: true, json: true})
-
-const base = new Airtable({ apiKey: config.get('airtableKey') }).base(config.get('baseId'))
-
 const syncAirtable = require('./syncAirtable')
 
 // 1. Define array of API calls
