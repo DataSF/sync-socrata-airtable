@@ -123,15 +123,18 @@ function transformDocumentation (record) {
 function transformProfiles (record) {
   return {
     'ID': record.datasetid,
-    'Data Updated Date': record.last_updt_dt_data,
+    //'Data Updated Date': record.last_updt_dt_data,
     'Number of Fields': parseInt(record.field_count, 10),
     'Number of Documented Fields': parseInt(record.documented_count),
     'Percent Documented': parseFloat(record.documented_percentage) * 100
   }
 }
 
-// 3. Process the list and sync inventory to socrata on completion
-syncAirtable.processDatasetList(apiCalls, 0)
-  .then(() => {
-    syncSocrata.pushDatasetInventory()
-  })
+// 3. Process the list and sync inventory and alert log to socrata on completion
+syncAirtable.processDatasetList(apiCalls, 0, pushToSocrata)
+
+function pushToSocrata() {
+  console.log('push datasets to Socrata')
+  syncSocrata.pushAlertLog()
+  syncSocrata.pushDatasetInventory()
+}

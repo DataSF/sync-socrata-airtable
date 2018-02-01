@@ -4,14 +4,15 @@ const request = require('request-promise').defaults({ gzip: true, json: true })
 
 const base = new Airtable({ apiKey: config.get('airtableKey') }).base(config.get('baseId'))
 
-function processDatasetList (apis, idx) {
+function processDatasetList (apis, idx, cb) {
   if (idx === apis.length) {
-    return false
+    console.log('reached end')
+    return cb()
   }
   let api = apis[idx]
   return processDatasetAsync(api.url, api.options)
     .then(() => {
-      processDatasetList (apis, idx + 1)
+      processDatasetList (apis, idx + 1, cb)
     }
   )
 }
@@ -43,7 +44,7 @@ function processDataset(url, options, onComplete, onError) {
           findAndUpdate(payload, options.transform)
         })
         options.page = options.page + options.add
-        setTimeout(processDataset, 30000, url, options, onComplete, onError)
+        setTimeout(processDataset, 3000, url, options, onComplete, onError)
       } else {
         console.log(`Completed querying ${url}`)
         return onComplete('success')
@@ -55,7 +56,7 @@ function processDataset(url, options, onComplete, onError) {
 }
 
 function findAndUpdate(payload, transform) {
-  console.log('Querying Airtable for dataset ' + payload['ID'])
+  //console.log('Querying Airtable for dataset ' + payload['ID'])
   base('Data Catalog').select({
     filterByFormula: '{ID} = "' + payload['ID'] + '"',
     maxRecords: 1
@@ -73,14 +74,14 @@ function findAndUpdate(payload, transform) {
 function updateRecord(id, payload) {
   base('Data Catalog').update(id, payload, (err, record) => {
     if (err) { console.error(err); return; }
-    console.log('Update: ' + record.get('ID'));
+    //console.log('Update: ' + record.get('ID'));
   });
 }
 
 function createRecord(payload) {
   base('Data Catalog').create(payload, (err, record) => {
     if (err) { console.error(err); return; }
-    console.log('Create: ' + record.get('ID'));
+    //console.log('Create: ' + record.get('ID'));
   });
 }
 

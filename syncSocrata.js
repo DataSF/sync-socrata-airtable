@@ -10,16 +10,18 @@ const base = new Airtable({ apiKey: config.get('airtableKey') }).base(config.get
 
 // get data inventory
 // push to socrata
+// TODO: abstract this more to handle a list of airtable bases and tables and socrata destinations
+const sodaOpts = {
+  'username': config.get('user'),
+  'password': config.get('pass'),
+  'apiToken': config.get('socrataAppToken')
+}
+const producer = new soda.Producer('data.sfgov.org', sodaOpts)
 
 function pushDatasetInventory() {
-  const sodaOpts = {
-    'username': config.get('user'),
-    'password': config.get('pass'),
-    'apiToken': config.get('socrataAppToken')
-  }
-  const producer = new soda.Producer('data.sfgov.org', sodaOpts)
+  console.log('sync inventory')
   let data = []
-  base('Dataset Inventory').select({
+  return base('Dataset Inventory').select({
     filterByFormula: 'NOT(OR({Revised Priority} = "Remove",ID = ""))',
     sort: [{ field: "ID", direction: "asc" }]
   }).eachPage(function page(records, fetchNextPage) {
@@ -71,11 +73,47 @@ function pushDatasetInventory() {
         producer.operation()
           .withDataset(config.get('inventoryId'))
           .upsert(data)
-          .on('success', row => { console.log(row) })
+          .on('success', row => { console.log(row); })
           .on('error', err => { console.log('error: ' + err) })
       })
       .on('error', err => { console.log('error: ' + err) })
   })
+}
+
+function pushAlertLog() {
+  console.log('sync alert log')
+  let data = []
+  return base('Public Issue Log').select()
+    .eachPage(function page(records, fetchNextPage) {
+      records.forEach(function(record) {
+        data.push({
+          alert_date: record.get('Alert Date'),
+          alert_details: record.get('Alert Details'),
+          dataset_link: firstValue(record.get('Dataset Link')),
+          dataset_name: firstValue(record.get('Dataset Name')),
+          resolution: record.get('Resolution'),
+          resolution_date: record.get('Resolution Date'),
+          status: record.get('Status')
+        })
+      })
+      fetchNextPage()
+    }, function done(err) {
+      if (err) { console.error(err); return; }
+
+      producer.operation()
+      .withDataset(config.get('alertLogId'))
+      .truncate()
+      .on('success', row => {
+        console.log(row)
+        // upsert in bulk
+        producer.operation()
+          .withDataset(config.get('alertLogId'))
+          .upsert(data)
+          .on('success', row => { console.log(row); })
+          .on('error', err => { console.log('error: ' + err) })
+      })
+      .on('error', err => { console.log('error: ' + err) })
+    })
 }
 
 function firstValue(arr) {
@@ -83,5 +121,6 @@ function firstValue(arr) {
 }
 
 module.exports = {
-  pushDatasetInventory: pushDatasetInventory
+  pushDatasetInventory: pushDatasetInventory,
+  pushAlertLog: pushAlertLog
 }
