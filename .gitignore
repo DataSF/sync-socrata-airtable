@@ -1,3 +1,5 @@
 .DS_Store
-config/*
 node_modules/*
+
+config/*
+!config/default-example.json
