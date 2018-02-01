@@ -2,7 +2,8 @@ const Airtable = require('airtable')
 const config = require('config')
 const request = require('request-promise').defaults({ gzip: true, json: true })
 
-const base = new Airtable({ apiKey: config.get('airtableKey') }).base(config.get('baseId'))
+const base = new Airtable({ apiKey: config.get('airtableKey') }).base(Buffer.from(config.get('baseId'), 'base64'))
+const pass = Buffer.from(config.get('pass'), 'base64')
 
 function processDatasetList (apis, idx, cb) {
   if (idx === apis.length) {
@@ -27,9 +28,9 @@ function processDataset(url, options, onComplete, onError) {
   return request({
     url: url + options.pageParam + '=' + options.page,
     headers: {
-      'Authorization': 'Basic ' + new Buffer(config.get('user') + ':' + config.get('pass')).toString('base64'),
+      'Authorization': 'Basic ' + new Buffer(config.get('user') + ':' + pass).toString('base64'),
       'X-Socrata-Host': 'data.sfgov.org',
-      'X-App-Token': config.get('socrataAppToken')
+      'X-App-Token': Buffer.from(config.get('socrataAppToken'), 'base64')
     }
   })
     .then(body => {

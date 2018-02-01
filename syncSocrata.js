@@ -6,14 +6,13 @@ const config = require('config')
 const request = require('request-promise').defaults({ gzip: true, json: true })
 const soda = require('soda-js')
 
-const base = new Airtable({ apiKey: config.get('airtableKey') }).base(config.get('baseId'))
-
+const base = new Airtable({ apiKey: config.get('airtableKey') }).base(Buffer.from(config.get('baseId'), 'base64'))
 // get data inventory
 // push to socrata
 // TODO: abstract this more to handle a list of airtable bases and tables and socrata destinations
 const sodaOpts = {
   'username': config.get('user'),
-  'password': config.get('pass'),
+  'password': Buffer.from(config.get('pass'), 'base64'),
   'apiToken': config.get('socrataAppToken')
 }
 const producer = new soda.Producer('data.sfgov.org', sodaOpts)
