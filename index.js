@@ -3,6 +3,45 @@ process.env.UV_THREADPOOL_SIZE = 128
 
 const syncAirtable = require('./syncAirtable')
 const syncSocrata = require('./syncSocrata')
+const readYaml = require('read-yaml')
+const email   = require("emailjs/email");
+
+
+//Emailer 
+
+function readConfigs (fn) {
+  return readYaml.sync(fn)
+}
+
+
+const emailConfigFn  = __dirname+ '/config/email_config_server.yaml'
+const emailConfigs = readConfigs(emailConfigFn)
+
+let emailServer = email.server.connect({
+   host:   emailConfigs.server_addr,
+   port: emailConfigs.server_port,
+});
+
+
+console.log(__dirname + "/" + emailConfigs.attachmentDir)
+
+
+
+const emailServerJobMsg = {
+   // text:    emailConfigs.etl_failure_msg, 
+   from:    emailConfigs.sender_addr, 
+   to:      emailConfigs.recipients,
+   subject: emailConfigs.email_subject,
+   attachment: 
+   [
+      {data: emailConfigs.email_msg, alternative:true},
+      {path:  __dirname + "/" + emailConfigs.attachmentDir+emailConfigs.attachmentFname, type:emailConfigs.mime_type, name:emailConfigs.attachmentFname}
+   ]
+}
+
+
+ emailServer.send( emailServerJobMsg, function(err, message) { console.log(err || message); });
+
 
 // 1. Define array of API calls
 
@@ -123,18 +162,24 @@ function transformDocumentation (record) {
 function transformProfiles (record) {
   return {
     'ID': record.datasetid,
-    //'Data Updated Date': record.last_updt_dt_data,
+    'Data Updated Date': record.last_updt_dt_data,
     'Number of Fields': parseInt(record.field_count, 10),
     'Number of Documented Fields': parseInt(record.documented_count),
     'Percent Documented': parseFloat(record.documented_percentage) * 100
   }
 }
 
+
+
 // 3. Process the list and sync inventory and alert log to socrata on completion
-syncAirtable.processDatasetList(apiCalls, 0, pushToSocrata)
+//syncAirtable.processDatasetList(apiCalls, 0, pushToSocrata)
 
 function pushToSocrata() {
   console.log('push datasets to Socrata')
   syncSocrata.pushAlertLog()
   syncSocrata.pushDatasetInventory()
+    // send the message and get a callback with an error or details of the message that was sent
+  //emailServer.send( emailServerJobMsg, function(err, message) { console.log(err || message); });
 }
+
+

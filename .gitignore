@@ -3,3 +3,5 @@ node_modules/*
 
 config/*
 !config/default-example.json
+!config/email_config_server_example.yaml
+logs/*

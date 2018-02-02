@@ -12,6 +12,8 @@
   "dependencies": {
     "airtable": "^0.5.1",
     "config": "^1.28.1",
+    "emailjs": "^1.0.12",
+    "read-yaml": "^1.1.0",
     "request": "^2.83.0",
     "request-promise": "^4.2.2",
     "soda-js": "^0.2.3"

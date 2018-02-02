@@ -1,0 +1,13 @@
+server_addr: yr email server addr
+server_port: yr email server port
+email_addr: email addr you wan to send emails from 
+email_pass: 
+recipients: email recipients addr
+sender_addr: datasf.etl@sfgov.org
+sender_password:
+bcc:
+mime_type: text/plain
+attachmentFname: sample_attachment.txt
+attachmentDir: logs/
+email_subject: Test-Sync Socrata Airtable Job Ran Successfully
+email_msg: "<html> <h2> [TEST] The Sync Socrata Airtable Job Ran Successfully </h2> <p> See the log file attached for more details </p> </html>"
