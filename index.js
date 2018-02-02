@@ -17,16 +17,15 @@ function readConfigs (fn) {
 const emailConfigFn  = __dirname+ '/config/email_config_server.yaml'
 const emailConfigs = readConfigs(emailConfigFn)
 
+
+//define the email server
 let emailServer = email.server.connect({
    host:   emailConfigs.server_addr,
    port: emailConfigs.server_port,
 });
 
 
-console.log(__dirname + "/" + emailConfigs.attachmentDir)
-
-
-
+//define the email body from the config file
 const emailServerJobMsg = {
    // text:    emailConfigs.etl_failure_msg, 
    from:    emailConfigs.sender_addr, 
@@ -39,8 +38,6 @@ const emailServerJobMsg = {
    ]
 }
 
-
- emailServer.send( emailServerJobMsg, function(err, message) { console.log(err || message); });
 
 
 // 1. Define array of API calls
@@ -172,14 +169,15 @@ function transformProfiles (record) {
 
 
 // 3. Process the list and sync inventory and alert log to socrata on completion
-//syncAirtable.processDatasetList(apiCalls, 0, pushToSocrata)
+syncAirtable.processDatasetList(apiCalls, 0, pushToSocrata)
 
 function pushToSocrata() {
   console.log('push datasets to Socrata')
   syncSocrata.pushAlertLog()
   syncSocrata.pushDatasetInventory()
     // send the message and get a callback with an error or details of the message that was sent
-  //emailServer.send( emailServerJobMsg, function(err, message) { console.log(err || message); });
+  emailServer.send( emailServerJobMsg, function(err, message) { console.log(err || message); });
+
 }
 
 
