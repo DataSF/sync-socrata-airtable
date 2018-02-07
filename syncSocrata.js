@@ -13,7 +13,7 @@ const base = new Airtable({ apiKey: config.get('airtableKey') }).base(Buffer.fro
 const sodaOpts = {
   'username': config.get('user'),
   'password': Buffer.from(config.get('pass'), 'base64'),
-  'apiToken': config.get('socrataAppToken')
+  'apiToken': Buffer.from(config.get('socrataAppToken'), 'base64')
 }
 const producer = new soda.Producer('data.sfgov.org', sodaOpts)
 
@@ -92,7 +92,8 @@ function pushAlertLog() {
           dataset_name: firstValue(record.get('Dataset Name')),
           resolution: record.get('Resolution'),
           resolution_date: record.get('Resolution Date'),
-          status: record.get('Status')
+          status: record.get('Status'),
+          dataset_id: firstValue(record.get('Dataset ID'))
         })
       })
       fetchNextPage()
@@ -111,7 +112,7 @@ function pushAlertLog() {
           .on('success', row => { console.log(row); })
           .on('error', err => { console.log('error: ' + err) })
       })
-      .on('error', err => { console.log('error: ' + err) })
+      .on('error', err => { console.log('error: ' + JSON.stringify(err)) })
     })
 }
 
