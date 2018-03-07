@@ -17,6 +17,8 @@ const sodaOpts = {
 }
 const producer = new soda.Producer('data.sfgov.org', sodaOpts)
 
+pushDatasetInventory()
+
 function pushDatasetInventory() {
   console.log('sync inventory')
   let data = []
@@ -51,6 +53,8 @@ function pushDatasetInventory() {
         metadata_complete: firstValue(record.get('Metadata Complete')),
         natively_hosted: firstValue(record.get('Natively Hosted')),
         on_time: firstValue(record.get('On Time')),
+        publishing_approach: firstValue(record.get('Publishing Approach')),
+        automated_by: firstValue(record.get('Automated By')),
         lag: lagDays > 0,
         lag_days: lagDays
       })
