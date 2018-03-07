@@ -17,8 +17,6 @@ const sodaOpts = {
 }
 const producer = new soda.Producer('data.sfgov.org', sodaOpts)
 
-pushDatasetInventory()
-
 function pushDatasetInventory() {
   console.log('sync inventory')
   let data = []
