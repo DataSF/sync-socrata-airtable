@@ -10,7 +10,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "airtable": "^0.5.2",
+    "airtable": "^0.5.10",
     "config": "^1.30.0",
     "emailjs": "^2.0.0",
     "read-yaml": "^1.1.0",
