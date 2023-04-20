@@ -10,11 +10,11 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "airtable": "^0.5.2",
+    "airtable": "^0.5.10",
     "config": "^1.30.0",
     "emailjs": "^2.0.0",
     "read-yaml": "^1.1.0",
-    "request": "^2.83.0",
+    "request": "^2.88.0",
     "request-promise": "^4.2.2",
     "soda-js": "^0.2.3"
   }
